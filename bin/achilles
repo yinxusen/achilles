@@ -1,0 +1,50 @@
+#!/bin/bash
+
+EXIT_CODE=0
+
+if [ -z $ACHILLES_DIR ] 
+then
+   ACHILLES_DIR=`dirname $0`/../
+fi
+
+if [ -z $JAVA_MEM_FLAG ] 
+then
+    JAVA_MEM_FLAG=-Xmx8g
+fi
+
+JARS="`find $HOME/.ivy2/ -name '*.jar' -print | tr '\n' ':'`"
+
+SCALA_LIB="$HOME/.sbt/boot/scala-2.10.2/lib/scala-library.jar"
+
+CP="$ACHILLES_DIR/target/classes:$SCALA_LIB:$ACHILLES_DIR/src/main/resources:$JARS"
+
+JAVA="$JAVA_HOME/bin/java"
+JAVA_COMMAND="$JAVA -classpath $CP -Dchalk.dir=$ACHILLES_DIR"
+
+CMD=$1
+shift
+
+help()
+{
+cat <<EOF
+chalk 1.2.x commands: 
+
+  run           run the main method of a given class
+
+Include --help with any option for more information
+EOF
+}
+
+CLASS=
+
+case $CMD in
+    run) CLASS=$1; shift;;
+    help) help; exit 1;;
+    *) echo "Unrecognized command: $CMD"; help; exit 1;;
+esac
+
+$JAVA_COMMAND $CLASS ${1+"$@"} 
+(( EXIT_CODE += $? ))
+
+exit $EXIT_CODE
+
