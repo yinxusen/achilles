@@ -1,4 +1,5 @@
 lib_managed/
+lib/
 target/
 .idea/
 .idea_modules/

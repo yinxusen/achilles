@@ -12,8 +12,8 @@ import scala.collection.mutable.Map
 
 //--------------------------------------------------------
 // easy for bean
-import util.UserContent
-import util.BeanListUC
+import achilles.util.UserContent
+import achilles.util.BeanListUC
 import collection.JavaConversions._
 
 /**

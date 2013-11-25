@@ -8,19 +8,16 @@ package achilles.backend.services
  */
 
 import akka.kernel.Bootable
-import akka.actor.{ Props, Actor, ActorSystem }
+import akka.actor.{ Props, Actor, ActorSystem, ActorLogging }
 import com.typesafe.config.ConfigFactory
+import achilles.dataming.recommending.topics.streamingRec._
 
 //#actor
-class MainServerActor extends Actor {
+class MainServerActor extends Actor with ActorLogging {
   def receive = {
     case QueryRecom(uid, content, location) =>
-    case Add(n1, n2) ⇒
-      println("Calculating %d + %d".format(n1, n2))
-      sender ! AddResult(n1, n2, n1 + n2)
-    case Subtract(n1, n2) ⇒
-      println("Calculating %d - %d".format(n1, n2))
-      sender ! SubtractResult(n1, n2, n1 - n2)
+      log.info("Query recommendation from Rec Actor")
+      sender ! queryRec(uid, content, location)
   }
 }
 //#actor

@@ -1,4 +1,4 @@
-package util;
+package achilles.util;
 
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;

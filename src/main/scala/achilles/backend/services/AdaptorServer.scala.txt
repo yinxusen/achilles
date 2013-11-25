@@ -18,7 +18,7 @@ class CreationApplication extends Bootable {
     ActorSystem("RemoteCreation", ConfigFactory.load.getConfig("remotecreation"))
   val remoteActor = system.actorOf(Props[AdvancedCalculatorActor],
     name = "advancedCalculator")
-  val localActor = system.actorOf(Props(classOf[CreationActor], remoteActor),
+  val localActor = system.actorOf(Props(classOf[AdaptorActor], remoteActor),
     name = "creationActor")
 
   def doSomething(op: RequireMsg): Unit =
@@ -34,7 +34,7 @@ class CreationApplication extends Bootable {
 }
 
 //#actor
-class CreationActor(remoteActor: ActorRef) extends Actor {
+class AdaptorActor(remoteActor: ActorRef) extends Actor {
   def receive = {
     case op: RequireMsg ⇒ remoteActor ! op
     case result: MathResult ⇒ result match {

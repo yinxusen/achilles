@@ -7,7 +7,7 @@ package achilles.dataming.recommending.topics
  * Time: 11:55 AM
  * To change this template use File | Settings | File Templates.
  */
-import util.tokenizer
+import achilles.util.tokenizer
 import scala.collection.JavaConversions._
 
 class smartcnTokenizer {

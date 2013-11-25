@@ -1,4 +1,4 @@
-package util;
+package achilles.util;
 
 public class UserContent {
     private String user_id;

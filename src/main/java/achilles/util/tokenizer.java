@@ -1,4 +1,4 @@
-package util;
+package achilles.util;
 
 /**
  * Created with IntelliJ IDEA.
