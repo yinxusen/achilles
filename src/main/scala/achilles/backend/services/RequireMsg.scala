@@ -11,4 +11,4 @@ case class QueryRecom(uid: String, content: String, loc: String) extends Require
 
 trait RecResult
 
-case class RecFromStreaming(uid: String, rec: String, rank: Int) extends RecResult
+case class BasicRecResult(uid: String, rec: String, rank: Int) extends RecResult
