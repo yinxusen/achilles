@@ -8,6 +8,7 @@ import akka.actor.Actor
 trait RequireMsg
 
 case class QueryRecom(uid: String, content: String, loc: String) extends RequireMsg
+case class checkDB() extends RequireMsg
 
 trait RecResult
 

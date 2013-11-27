@@ -1,9 +1,9 @@
 name := "Achilles"
- 
+
 version := "0.1"
- 
+
 scalaVersion := "2.10.2"
- 
+
 resolvers ++= Seq(
   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 )
@@ -22,6 +22,6 @@ libraryDependencies ++= Seq(
   "tomcat" % "tomcat-juli" % "5.5.12",
   "commons-httpclient" % "commons-httpclient" % "3.1",
   "org.codehaus.jackson" % "jackson-jaxrs" % "1.8.5",
-  "log4j" % "log4j" % "1.2.16",
-  "org.apache.tomcat" % "tomcat-jdbc" % "7.0.47"
+  "org.apache.tomcat" % "tomcat-jdbc" % "7.0.47",
+  "org.slf4j" % "slf4j-log4j12" % "1.7.5"
 )

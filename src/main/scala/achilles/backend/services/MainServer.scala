@@ -7,30 +7,36 @@ package achilles.backend.services
  * comments like //#<tag> are there for inclusion into docs, please don’t remove
  */
 
+import akka.actor.{ActorSystem, ActorLogging, Actor, ActorRef, Props}
 import akka.kernel.Bootable
-import akka.actor._
+import akka.pattern._
+import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import scala.concurrent.duration._
-import akka.pattern.ask
-import akka.actor.Status._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
+import scala.concurrent.Future
 
 //#actor
 class MainServerActor(streamActor: ActorRef, dbActor: ActorRef) extends Actor with ActorLogging {
   def receive = {
     case QueryRecom(uid, content, location) =>
       log.info("Query recommendation from Rec Actor")
-      val streamFuture = streamActor.ask(QueryRecom(uid, content, location))(1 seconds)
-      val dbFuture = dbActor.ask(QueryRecom(uid, content, location))(1 seconds)
-      streamFuture onComplete {
-        case Success(result) => sender ! result
-        case Failure(result) => {
-          dbFuture onComplete {
-            case Success(result) => sender ! result
-            case Failure(result) => Nil
-              log.info("Time out both in streaming and database recommendation")
+      implicit val timeout = Timeout(1.second)
+      val streamFuture = streamActor ? QueryRecom(uid, content, location)
+      val dbFuture = dbActor ? QueryRecom(uid, content, location)
+      val requester = sender
+
+      Future.sequence(Seq(streamFuture, dbFuture)) onComplete {
+        case Success(Seq(streamResult, _)) => requester ! streamResult
+        case Failure(failure) =>
+          streamFuture.value match {
+            case Some(result) => requester ! result
+            case None => dbFuture match {
+              case Some(result) => requester ! result
+              case None => log.info("Time out both in streaming and database recommendation")
+            }
           }
-        }
       }
   }
 }

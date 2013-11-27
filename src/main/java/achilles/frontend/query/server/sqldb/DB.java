@@ -173,7 +173,7 @@ public class DB {
 
 	/**
 	 * 
-	 * @param shopids
+	 * @param shopinfos
 	 * @return shop's discounts,have bijection to shops
 	 */
 	public static String[][] getShopDiscount(String[][] shopinfos) {
