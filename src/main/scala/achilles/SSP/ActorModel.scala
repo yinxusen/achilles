@@ -1,7 +1,7 @@
 /**
  *  Copyright (C) 2009-2013 Typesafe Inc. <http://www.typesafe.com>
  */
-package sample.remote.calculator
+package achilles.SSP
 
 /*
  * comments like //#<tag> are there for inclusion into docs, please don’t remove
@@ -34,6 +34,10 @@ class ActorModel extends Bootable {
   val remotePath =
     "akka.tcp://CalculatorApplication@127.0.0.1:2552/user/simpleCalculator"
   val actor = system.actorOf(Props(classOf[AdaptorActor], remotePath), "lookupActor")
+
+  system.scheduler.schedule(100 millis, 100 millis) {
+    actor ! reportLL
+  }
 
   def doSomething(op: RequireMsg): Unit =
     actor ! op

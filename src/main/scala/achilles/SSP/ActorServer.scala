@@ -3,16 +3,11 @@
  */
 package achilles.SSP
 
-/*
- * comments like //#<tag> are there for inclusion into docs, please don’t remove
- */
-
 import akka.actor.{ActorSystem, ActorLogging, Actor, ActorRef, Props}
 import akka.kernel.Bootable
 import com.typesafe.config.ConfigFactory
 import breeze.linalg.{DenseVector, DenseMatrix}
 
-//#actor
 class ActorServer(numTopics: Int, numWords: Int, numDocs: Int) extends Actor with ActorLogging {
   var termWeight: DenseMatrix[Double] = DenseMatrix.rand(numTopics, numWords) / numWords.toDouble
   var topicMixes: Array[DenseVector[Double]] = new Array[DenseVector[Double]](numDocs)
@@ -26,9 +21,10 @@ class ActorServer(numTopics: Int, numWords: Int, numDocs: Int) extends Actor wit
       sender ! feedTermWeight(termWeight)
     case requestTopicMixes(idx) =>
       sender ! feedTopicMixes(idx map {topicMixes(_)})
+    case reportLL =>
+      
   }
 }
-//#actor
 
 class MainServerApp extends Bootable {
   //#setup

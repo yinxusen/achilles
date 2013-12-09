@@ -15,3 +15,5 @@ case class requestTopicMixes(idx: Array[Int]) extends ServerMsg
 
 case class feedTermWeight(termWeight: DenseMatrix[Double]) extends WorkerMsg
 case class feedTopicMixes(topicMixes: Array[DenseVector[Double]]) extends WorkerMsg
+
+case class reportLL() extends ServerMsg
