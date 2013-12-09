@@ -1,7 +1,7 @@
 /**
  *  Copyright (C) 2009-2013 Typesafe Inc. <http://www.typesafe.com>
  */
-package achilles.SSP
+package achilles.backend.services
 
 /*
  * comments like //#<tag> are there for inclusion into docs, please don’t remove
@@ -41,11 +41,11 @@ class MainServerActor(streamActor: ActorRef, dbActor: ActorRef) extends Actor wi
 }
 //#actor
 
-class MainServerApp extends Bootable {
+class ServerActorApp extends Bootable {
   //#setup
-  val system = ActorSystem("MainServerApp",
+  val system = ActorSystem("ServerActorApp",
     ConfigFactory.load.getConfig("mainserver"))
-  val actor = system.actorOf(Props[ServerActor], "MainServerActor")
+  val actor = system.actorOf(Props[MainServerActor], "ServerActorApp")
   //#setup
 
   def startup() {
@@ -58,7 +58,7 @@ class MainServerApp extends Bootable {
 
 object RecApp {
   def main(args: Array[String]) {
-    new MainServerApp
+    new ServerActorApp
     println("Started Calculator Application - waiting for messages")
   }
 }

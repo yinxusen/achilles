@@ -92,7 +92,7 @@ class AdaptorActor(path: String) extends Actor with ActorLogging {
 
 object AdaptorApp {
   def main(args: Array[String]) {
-    val app = new ActorModel
+    val app = new AdaptorApplication
     println("Started Adaptor Application")
     app.doSomething(checkDB())
   }

@@ -28,11 +28,11 @@ class ServerActor(numTopics: Int, numWords: Int, numDocs: Int) extends Actor wit
   }
 }
 
-class MainServerApp extends Bootable {
+class ServerActorApp(numTopics: Int, numWords: Int, numDocs: Int) extends Bootable {
   //#setup
-  val system = ActorSystem("MainServerApp",
-    ConfigFactory.load.getConfig("mainserver"))
-  val actor = system.actorOf(Props[ServerActor], "MainServerActor")
+  val system = ActorSystem("ServerActorApp",
+    ConfigFactory.load.getConfig("serveractor"))
+  val actor = system.actorOf(Props(classOf[ServerActor], numTopics, numWords, numDocs), "ServerActor")
   //#setup
 
   def startup() {
@@ -44,8 +44,4 @@ class MainServerApp extends Bootable {
 }
 
 object ServerActor {
-  def main(args: Array[String]) {
-    new MainServerApp
-    println("Started Calculator Application - waiting for messages")
-  }
 }

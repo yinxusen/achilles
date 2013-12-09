@@ -7,33 +7,31 @@ package achilles.SSP
  * comments like //#<tag> are there for inclusion into docs, please don’t remove
  */
 
-import breeze.linalg._
-import breeze.config.CommandLineParser
-import breeze.util.Index
-import chalk.text.transform.StopWordFilter
-import scala.collection.mutable.Map
-import achilles.dataming.recommending.topics.smartcnTokenizer
-
-//--------------------------------------------------------
-// easy for bean
-
-import achilles.util.BeanListUC
-import collection.JavaConversions._
-
 import com.typesafe.config.ConfigFactory
 import akka.actor._
 import akka.kernel.Bootable
 
+import breeze.linalg._
+import breeze.numerics._
+import breeze.config.CommandLineParser
+import breeze.util.Index
+import java.io.File
+import chalk.text.tokenize.JavaWordTokenizer
+import chalk.text.transform.StopWordFilter
+import scala.io._
+import breeze.util.Implicits._
+
+
 class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVector[Double]]) extends Bootable {
   //#setup
   val system =
-    ActorSystem("AdaptorApplication", ConfigFactory.load.getConfig("remotelookup"))
+    ActorSystem("ModelActor", ConfigFactory.load.getConfig("modelactor"))
   val remotePath =
-    "akka.tcp://CalculatorApplication@127.0.0.1:2552/user/simpleCalculator"
+    "akka.tcp://ServerActorApp@127.0.0.1:2552/user/ServerActor"
   val parallelBlock = 10
-  val numTopics = 10
+  val numTopics = params.numTopics
   val numWords = trainingData.head.size
-  val oneBlockCount = (trainingData.length / parallelBlock).toInt
+  val oneBlockCount = (trainingData.length / parallelBlock)
   val dataBlocks = for (i <- 0 until parallelBlock) yield trainingData.zipWithIndex.slice(i * oneBlockCount, if ((i + 1) * oneBlockCount > trainingData.length) trainingData.length else (i + 1) * oneBlockCount)
   val actors = for (i <- 0 until parallelBlock) yield system.actorOf(Props(classOf[ModelTrainer], remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length), "lookupActor")
 
@@ -56,10 +54,7 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
 
 object ModelActor {
 
-  case class Params(dburl: String,
-                    dbuser: String,
-                    dbpasswd: String,
-                    jdbcDriver: String = "com.mysql.jdbc.Driver",
+  case class Params(dir: File,
                     numTopics: Int = 20,
                     topicSmoothing: Double = .1,
                     wordSmoothing: Double = 0.1)
@@ -71,22 +66,19 @@ object ModelActor {
 
     // Feature map
     val fmap = Index[String]()
-    val removeStopWords = new StopWordFilter("en")
 
-    val buc = new BeanListUC(dburl, jdbcDriver, dbuser, dbpasswd)
-    val uc: Map[String, String] = buc.getUC()
-    val keys = uc.keys.toArray
-    val values = uc.values.toArray
 
+    // val removeStopWords = new StopWordFilter("en")
     // Read in the training data and index it.
     val almostTrainingData = for {
-      text <- values
+      f <- dir.listFiles
     } yield {
+      val text = Source.fromFile(f)("UTF-8").mkString
       val builder = new VectorBuilder[Double](Int.MaxValue, text.length / 20)
-      for (tok <- smartcnTokenizer(text) if tok(0).isLetter && removeStopWords(tok)) {
-        println(tok)
+      for(tok <- JavaWordTokenizer(text) if tok(0).isLetter) {
         builder.add(fmap.index(tok), 1.0)
       }
+
       builder
     }
 
@@ -94,7 +86,10 @@ object ModelActor {
       b => b.length = fmap.size; b.toSparseVector
     }
 
+    new ServerActorApp(params.numTopics, trainingData.head.size, trainingData.length)
+    println("server start up...")
     val app = new ModelActor(params, trainingData)
+    println("worker start up...")
     app.bootstrap(10)
 
     /*
