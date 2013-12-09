@@ -12,29 +12,20 @@ import breeze.numerics._
 import breeze.config.CommandLineParser
 import breeze.util.Index
 import chalk.text.transform.StopWordFilter
-import breeze.util.Implicits._
 import scala.collection.mutable.Map
-import achilles.dataming.recommending.topics.{REC, smartcnTokenizer}
+import achilles.dataming.recommending.topics.smartcnTokenizer
 
 //--------------------------------------------------------
 // easy for bean
 import achilles.util.BeanListUC
 import collection.JavaConversions._
 
-import scala.concurrent.duration._
 import com.typesafe.config.ConfigFactory
 import akka.actor._
 import akka.kernel.Bootable
 import achilles.backend.services._
 import achilles.backend.services.checkDB
-import akka.actor.ActorIdentity
-import scala.Some
-import akka.actor.Identify
 import scala.concurrent._
-import ExecutionContext.Implicits.global
-import achilles.SSP.{feedTopicMixes, feedTermWeight}
-
-//#imports
 
 class ActorModel extends Bootable {
   //#setup
@@ -43,10 +34,6 @@ class ActorModel extends Bootable {
   val remotePath =
     "akka.tcp://CalculatorApplication@127.0.0.1:2552/user/simpleCalculator"
   val actor = system.actorOf(Props(classOf[AdaptorActor], remotePath), "lookupActor")
-
-  system.scheduler.schedule(100 millis, 100 millis) {
-    actor ! checkDB
-  }
 
   def doSomething(op: RequireMsg): Unit =
     actor ! op
@@ -59,31 +46,6 @@ class ActorModel extends Bootable {
     system.shutdown()
   }
 }
-
-//#actor
-class AdaptorActor(path: String) extends Actor with ActorLogging {
-
-  context.setReceiveTimeout(3.seconds)
-  sendIdentifyRequest()
-
-  def sendIdentifyRequest(): Unit =
-    context.actorSelection(path) ! Identify(path)
-
-  def receive = {
-    case ActorIdentity(`path`, Some(actor)) =>
-      context.setReceiveTimeout(Duration.Undefined)
-      context.become(active(actor))
-    case ActorIdentity(`path`, None) => println(s"Remote actor not availible: $path")
-    case ReceiveTimeout              => sendIdentifyRequest()
-    case _                           => println("Not ready yet")
-  }
-
-  def active(actor: ActorRef): Actor.Receive = {
-    case feedTermWeight(tw) =>
-    case feedTopicMixes(tm) =>
-  }
-}
-//#actor
 
 object ActorModel {
   case class Model(termWeights: DenseMatrix[Double], topicMixes: Array[DenseVector[Double]], likelihood: Double, numTopics: Int, topicSmoothing: Double, wordSmoothing: Double) {
@@ -184,7 +146,7 @@ object ActorModel {
 
     val trainingData = almostTrainingData.map{ b => b.length = fmap.size; b.toSparseVector}
 
-    val rec = new REC(params.numTopics, params.topicSmoothing, params.wordSmoothing)
+    val rec = new LDA(params.numTopics, params.topicSmoothing, params.wordSmoothing)
 
     val model = rec.iterations(trainingData).tee(m => println(m.likelihood)).last
     for( (list, k) <- model.topicMixes zip keys) {

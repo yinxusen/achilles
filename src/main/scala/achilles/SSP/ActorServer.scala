@@ -13,19 +13,19 @@ import com.typesafe.config.ConfigFactory
 import breeze.linalg.{DenseVector, DenseMatrix}
 
 //#actor
-class ActorServer(numTopics: Int, numWords: Int) extends Actor with ActorLogging {
+class ActorServer(numTopics: Int, numWords: Int, numDocs: Int) extends Actor with ActorLogging {
   var termWeight: DenseMatrix[Double] = DenseMatrix.rand(numTopics, numWords) / numWords.toDouble
   var topicMixes: Array[DenseVector[Double]] = new Array[DenseVector[Double]](numDocs)
 
   def receive = {
     case updateTermWeight(tw) =>
       termWeight += tw // Here need more details
-    case updateTopicMixes(tm, i) =>
-      topicMixes(i) = tm
+    case updateTopicMixes(tm, idx) =>
+      for((id, j) <- idx.zipWithIndex) topicMixes.update(j, tm(id))
     case requestTermWeight =>
       sender ! feedTermWeight(termWeight)
-    case requestTopicMixes =>
-      sender ! feedTopicMixes(topicMixes)
+    case requestTopicMixes(idx) =>
+      sender ! feedTopicMixes(idx map {topicMixes(_)})
   }
 }
 //#actor
