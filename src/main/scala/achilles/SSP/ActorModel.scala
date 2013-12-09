@@ -30,7 +30,7 @@ import scala.util.{Failure, Success}
 
 //#imports
 
-class AdaptorApplication extends Bootable {
+class ActorModel extends Bootable {
   //#setup
   val system =
     ActorSystem("AdaptorApplication", ConfigFactory.load.getConfig("remotelookup"))

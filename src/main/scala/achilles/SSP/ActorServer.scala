@@ -18,7 +18,7 @@ import scala.util.{Failure, Success}
 import scala.concurrent.Future
 
 //#actor
-class MainServerActor(streamActor: ActorRef, dbActor: ActorRef) extends Actor with ActorLogging {
+class ActorServer(streamActor: ActorRef, dbActor: ActorRef) extends Actor with ActorLogging {
   def receive = {
     case QueryRecom(uid, content, location) =>
       log.info("Query recommendation from Rec Actor")
