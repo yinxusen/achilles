@@ -45,7 +45,7 @@ class MainServerApp extends Bootable {
   //#setup
   val system = ActorSystem("MainServerApp",
     ConfigFactory.load.getConfig("mainserver"))
-  val actor = system.actorOf(Props[ActorServer], "MainServerActor")
+  val actor = system.actorOf(Props[ServerActor], "MainServerActor")
   //#setup
 
   def startup() {

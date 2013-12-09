@@ -8,7 +8,7 @@ import akka.kernel.Bootable
 import com.typesafe.config.ConfigFactory
 import breeze.linalg.{DenseVector, DenseMatrix}
 
-class ActorServer(numTopics: Int, numWords: Int, numDocs: Int) extends Actor with ActorLogging {
+class ServerActor(numTopics: Int, numWords: Int, numDocs: Int) extends Actor with ActorLogging {
   var termWeight: DenseMatrix[Double] = DenseMatrix.rand(numTopics, numWords) / numWords.toDouble
   var topicMixes: Array[DenseVector[Double]] = new Array[DenseVector[Double]](numDocs)
 
@@ -30,7 +30,7 @@ class MainServerApp extends Bootable {
   //#setup
   val system = ActorSystem("MainServerApp",
     ConfigFactory.load.getConfig("mainserver"))
-  val actor = system.actorOf(Props[ActorServer], "MainServerActor")
+  val actor = system.actorOf(Props[ServerActor], "MainServerActor")
   //#setup
 
   def startup() {
@@ -41,7 +41,7 @@ class MainServerApp extends Bootable {
   }
 }
 
-object ActorServer {
+object ServerActor {
   def main(args: Array[String]) {
     new MainServerApp
     println("Started Calculator Application - waiting for messages")

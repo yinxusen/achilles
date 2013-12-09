@@ -27,13 +27,13 @@ import achilles.backend.services._
 import achilles.backend.services.checkDB
 import scala.concurrent._
 
-class ActorModel extends Bootable {
+class ModelActor extends Bootable {
   //#setup
   val system =
     ActorSystem("AdaptorApplication", ConfigFactory.load.getConfig("remotelookup"))
   val remotePath =
     "akka.tcp://CalculatorApplication@127.0.0.1:2552/user/simpleCalculator"
-  val actor = system.actorOf(Props(classOf[AdaptorActor], remotePath), "lookupActor")
+  val actor = system.actorOf(Props(classOf[ModelTrainer], remotePath), "lookupActor")
 
   system.scheduler.schedule(100 millis, 100 millis) {
     actor ! reportLL
@@ -51,69 +51,7 @@ class ActorModel extends Bootable {
   }
 }
 
-object ActorModel {
-  case class Model(termWeights: DenseMatrix[Double], topicMixes: Array[DenseVector[Double]], likelihood: Double, numTopics: Int, topicSmoothing: Double, wordSmoothing: Double) {
-    case class InferenceResult(topicLoadings: DenseVector[Double], wordLoadings: DenseMatrix[Double], ll: Double)
-    def inference(doc: SparseVector[Double]) = {
-      var converged = false
-      var iter = 25
-      val gamma = DenseMatrix.zeros[Double](numTopics, doc.activeSize)
-      gamma := topicSmoothing
-      var alpha = DenseVector.fill(numTopics)(topicSmoothing)
-      var newAlpha = DenseVector.zeros[Double](numTopics)
-      var ll = 0.0
-
-      // inference
-      while (!converged && iter > 0) {
-        converged = true
-        newAlpha := topicSmoothing
-        iter -= 1
-        var i = 0
-        while (i < doc.activeSize) {
-          val result = normalize(alpha :* termWeights(::, doc.indexAt(i)), 1)
-          assert(!norm(result).isNaN, gamma(::, i).toString + " " + alpha.toString + " " + termWeights(::, doc.indexAt(i)))
-
-          converged &&= norm(gamma(::, i) - result, Double.PositiveInfinity) < 1E-4
-          gamma(::, i) := result
-          newAlpha += (result * doc.valueAt(i))
-          i += 1
-        }
-        val newLL = likelihood(doc, newAlpha, gamma)
-        ll = newLL
-
-        if (!converged) {
-          val xx = newAlpha
-          newAlpha = alpha
-          alpha = xx
-          digamma.inPlace(alpha)
-          exp.inPlace(alpha)
-        }
-
-      }
-      InferenceResult(alpha, gamma, ll)
-    }
-
-    private def likelihood(doc: SparseVector[Double], theta: DenseVector[Double], gamma: DenseMatrix[Double]) = {
-      val dig = digamma(theta)
-      val digsum = digamma(sum(theta))
-      var ll = lgamma(topicSmoothing * numTopics) - numTopics * lgamma(topicSmoothing) - lgamma(sum(theta))
-      var k = 0
-      while(k < numTopics) {
-        ll +=  (topicSmoothing - 1)*(dig(k) - digsum) + lgamma(theta(k)) - (theta(k) - 1)*(dig(k) - digsum)
-        var i = 0
-        while(i < doc.activeSize) {
-          val n = doc.indexAt(i)
-          ll += doc.valueAt(i) * (gamma(k, i)*((dig(k) - digsum) - log(gamma(k, i)) + math.log(termWeights(k, n))))
-          i += 1
-        }
-
-        k += 1
-      }
-
-      ll
-    }
-  }
-
+object ModelActor {
   case class Params(dburl: String,
                     dbuser: String,
                     dbpasswd: String,
@@ -126,6 +64,7 @@ object ActorModel {
     val config = CommandLineParser.parseArguments(args)._1
     val params = config.readIn[Params]("")
     import params._
+    import TopicModel._
 
     // Feature map
     val fmap = Index[String]()
@@ -150,7 +89,7 @@ object ActorModel {
 
     val trainingData = almostTrainingData.map{ b => b.length = fmap.size; b.toSparseVector}
 
-    val rec = new LDA(params.numTopics, params.topicSmoothing, params.wordSmoothing)
+    val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)
 
     val model = rec.iterations(trainingData).tee(m => println(m.likelihood)).last
     for( (list, k) <- model.topicMixes zip keys) {
@@ -163,7 +102,7 @@ object ActorModel {
       println(list.mkString("\t","\n\t", "\n"))
     }
 
-    val app = new ActorModel
+    val app = new ModelActor
     println("Started Adaptor Application")
     app.doSomething(checkDB())  }
 }

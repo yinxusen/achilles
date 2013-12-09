@@ -6,19 +6,29 @@ import akka.actor._
 import akka.actor.ActorIdentity
 import scala.Some
 import akka.actor.Identify
+import breeze.util.Implicits._
 
-class AdaptorActor(path: String, params: ActorModel.Params, trainingData: IndexedSeq[(SparseVector[Double], Int)], numWords: Int, numTopics: Int, numDocs: Int) extends Actor with ActorLogging {
-  import ActorModel._
+/**
+ * This is the class of ModelTrainer which only knows itself.
+ * @param path
+ * @param params
+ * @param trainingData
+ * @param numWords
+ * @param numTopics
+ * @param numDocs
+ */
+class ModelTrainer(path: String, params: ModelActor.Params, trainingData: IndexedSeq[(SparseVector[Double], Int)], numWords: Int, numTopics: Int, numDocs: Int) extends Actor with ActorLogging {
+  import TopicModel._
   context.setReceiveTimeout(3.seconds)
   sendIdentifyRequest()
 
-  val rec = new LDA(params.numTopics, params.topicSmoothing, params.wordSmoothing)
+  val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)
 
   var lastTermWeights = DenseMatrix.rand(numTopics, numWords) / numWords.toDouble
   var lastTopicMixes = new Array[DenseVector[Double]](numDocs)
 
-  val indexes = trainingData.map(_.2).toArray
-  val dataset = trainingData.map(_.1)
+  val indexes = trainingData.map(x => x._2).toArray
+  val dataset = trainingData.map(x => x._1)
 
   def sendIdentifyRequest(): Unit =
     context.actorSelection(path) ! Identify(path)
@@ -33,23 +43,21 @@ class AdaptorActor(path: String, params: ActorModel.Params, trainingData: Indexe
   }
 
   def runNTimes(tw: DenseMatrix[Double]): Model = {
-    val indexedTopicMixes = lastTopicMixes.slice(indexes)
-    rec.iterations(dataset, tw, indexedTopicMixes).last
+    rec.iterations(dataset, tw, lastTopicMixes).last
   }
 
   def runNTimes(tm: Array[DenseVector[Double]]): Model = {
-    val indexedTopicMixes = tm.slice(indexes)
-    rec.iterations(dataset, lastTermWeights, indexedTopicMixes).last
+    rec.iterations(dataset, lastTermWeights, tm).last
   }
 
   def active(actor: ActorRef): Actor.Receive = {
     case feedTermWeight(tw) =>
-      newModel = runNTimes(tw)
+      val newModel = runNTimes(tw)
       sender ! updateTermWeight(newModel.termWeights)
       sender ! updateTopicMixes(newModel.topicMixes, indexes)
 
     case feedTopicMixes(tm) =>
-      newModel = runNTimes(tm)
+      val newModel = runNTimes(tm)
       sender ! updateTermWeight(newModel.termWeights)
       sender ! updateTopicMixes(newModel.topicMixes, indexes)
   }

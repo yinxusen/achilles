@@ -13,6 +13,7 @@ import achilles.dataming.recommending.topics.smartcnTokenizer
 // easy for bean
 import achilles.util.BeanListUC
 import collection.JavaConversions._
+import breeze.util.Implicits._
 
 import scala.concurrent.duration._
 import com.typesafe.config.ConfigFactory
@@ -28,8 +29,8 @@ import ExecutionContext.Implicits.global
 import achilles.SSP.{feedTopicMixes, feedTermWeight}
 
 
-class LDA(numTopics: Int, topicSmoothing: Double = 0.5, wordSmoothing: Double = 0.05, numIterations: Int = 5) {
-  import ActorModel._
+class TopicModel(numTopics: Int, topicSmoothing: Double = 0.5, wordSmoothing: Double = 0.05, numIterations: Int = 5) {
+  import TopicModel._
   // def fitModel(data: IndexedSeq[SparseVector[Double]]): Model = iterations(data).drop(1).take(numIterations).last
 
   def iterations(data: IndexedSeq[SparseVector[Double]], termWeights: DenseMatrix[Double], topicMixes: Array[DenseVector[Double]]): Iterator[Model] = {
@@ -76,4 +77,67 @@ class LDA(numTopics: Int, topicSmoothing: Double = 0.5, wordSmoothing: Double = 
   }.drop(1).take(numIterations)
 }
 
+object TopicModel {
+  case class Model(termWeights: DenseMatrix[Double], topicMixes: Array[DenseVector[Double]], likelihood: Double, numTopics: Int, topicSmoothing: Double, wordSmoothing: Double) {
+    case class InferenceResult(topicLoadings: DenseVector[Double], wordLoadings: DenseMatrix[Double], ll: Double)
+    def inference(doc: SparseVector[Double]) = {
+      var converged = false
+      var iter = 25
+      val gamma = DenseMatrix.zeros[Double](numTopics, doc.activeSize)
+      gamma := topicSmoothing
+      var alpha = DenseVector.fill(numTopics)(topicSmoothing)
+      var newAlpha = DenseVector.zeros[Double](numTopics)
+      var ll = 0.0
+
+      // inference
+      while (!converged && iter > 0) {
+        converged = true
+        newAlpha := topicSmoothing
+        iter -= 1
+        var i = 0
+        while (i < doc.activeSize) {
+          val result = normalize(alpha :* termWeights(::, doc.indexAt(i)), 1)
+          assert(!norm(result).isNaN, gamma(::, i).toString + " " + alpha.toString + " " + termWeights(::, doc.indexAt(i)))
+
+          converged &&= norm(gamma(::, i) - result, Double.PositiveInfinity) < 1E-4
+          gamma(::, i) := result
+          newAlpha += (result * doc.valueAt(i))
+          i += 1
+        }
+        val newLL = likelihood(doc, newAlpha, gamma)
+        ll = newLL
+
+        if (!converged) {
+          val xx = newAlpha
+          newAlpha = alpha
+          alpha = xx
+          digamma.inPlace(alpha)
+          exp.inPlace(alpha)
+        }
+
+      }
+      InferenceResult(alpha, gamma, ll)
+    }
+
+    private def likelihood(doc: SparseVector[Double], theta: DenseVector[Double], gamma: DenseMatrix[Double]) = {
+      val dig = digamma(theta)
+      val digsum = digamma(sum(theta))
+      var ll = lgamma(topicSmoothing * numTopics) - numTopics * lgamma(topicSmoothing) - lgamma(sum(theta))
+      var k = 0
+      while(k < numTopics) {
+        ll +=  (topicSmoothing - 1)*(dig(k) - digsum) + lgamma(theta(k)) - (theta(k) - 1)*(dig(k) - digsum)
+        var i = 0
+        while(i < doc.activeSize) {
+          val n = doc.indexAt(i)
+          ll += doc.valueAt(i) * (gamma(k, i)*((dig(k) - digsum) - log(gamma(k, i)) + math.log(termWeights(k, n))))
+          i += 1
+        }
+
+        k += 1
+      }
+
+      ll
+    }
+  }
+}
 // vim: set ts=4 sw=4 et:
