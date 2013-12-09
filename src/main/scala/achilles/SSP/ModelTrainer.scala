@@ -18,7 +18,9 @@ import breeze.util.Implicits._
  * @param numDocs
  */
 class ModelTrainer(path: String, params: ModelActor.Params, trainingData: IndexedSeq[(SparseVector[Double], Int)], numWords: Int, numTopics: Int, numDocs: Int) extends Actor with ActorLogging {
+
   import TopicModel._
+
   context.setReceiveTimeout(3.seconds)
   sendIdentifyRequest()
 
@@ -38,8 +40,8 @@ class ModelTrainer(path: String, params: ModelActor.Params, trainingData: Indexe
       context.setReceiveTimeout(Duration.Undefined)
       context.become(active(actor))
     case ActorIdentity(`path`, None) => println(s"Remote actor not availible: $path")
-    case ReceiveTimeout              => sendIdentifyRequest()
-    case _                           => println("Not ready yet")
+    case ReceiveTimeout => sendIdentifyRequest()
+    case _ => println("Not ready yet")
   }
 
   def runNTimes(tw: DenseMatrix[Double]): Model = {

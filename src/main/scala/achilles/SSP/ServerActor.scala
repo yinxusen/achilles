@@ -1,9 +1,9 @@
 /**
- *  Copyright (C) 2009-2013 Typesafe Inc. <http://www.typesafe.com>
+ * Copyright (C) 2009-2013 Typesafe Inc. <http://www.typesafe.com>
  */
 package achilles.SSP
 
-import akka.actor.{ActorSystem, ActorLogging, Actor, ActorRef, Props}
+import akka.actor.{ActorSystem, ActorLogging, Actor, Props}
 import akka.kernel.Bootable
 import com.typesafe.config.ConfigFactory
 import breeze.linalg.{DenseVector, DenseMatrix}
@@ -16,13 +16,15 @@ class ServerActor(numTopics: Int, numWords: Int, numDocs: Int) extends Actor wit
     case updateTermWeight(tw) =>
       termWeight += tw // Here need more details
     case updateTopicMixes(tm, idx) =>
-      for((id, j) <- idx.zipWithIndex) topicMixes.update(j, tm(id))
+      for ((id, j) <- idx.zipWithIndex) topicMixes.update(j, tm(id))
     case requestTermWeight =>
       sender ! feedTermWeight(termWeight)
     case requestTopicMixes(idx) =>
-      sender ! feedTopicMixes(idx map {topicMixes(_)})
+      sender ! feedTopicMixes(idx map {
+        topicMixes(_)
+      })
     case reportLL =>
-      
+
   }
 }
 

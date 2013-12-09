@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2009-2013 Typesafe Inc. <http://www.typesafe.com>
+ * Copyright (C) 2009-2013 Typesafe Inc. <http://www.typesafe.com>
  */
 package achilles.SSP
 
@@ -8,7 +8,6 @@ package achilles.SSP
  */
 
 import breeze.linalg._
-import breeze.numerics._
 import breeze.config.CommandLineParser
 import breeze.util.Index
 import chalk.text.transform.StopWordFilter
@@ -17,31 +16,35 @@ import achilles.dataming.recommending.topics.smartcnTokenizer
 
 //--------------------------------------------------------
 // easy for bean
+
 import achilles.util.BeanListUC
 import collection.JavaConversions._
 
 import com.typesafe.config.ConfigFactory
 import akka.actor._
 import akka.kernel.Bootable
-import achilles.backend.services._
-import achilles.backend.services.checkDB
-import scala.concurrent._
 
-class ModelActor extends Bootable {
+class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVector[Double]]) extends Bootable {
   //#setup
   val system =
     ActorSystem("AdaptorApplication", ConfigFactory.load.getConfig("remotelookup"))
   val remotePath =
     "akka.tcp://CalculatorApplication@127.0.0.1:2552/user/simpleCalculator"
-  val actor = system.actorOf(Props(classOf[ModelTrainer], remotePath), "lookupActor")
+  val parallelBlock = 10
+  val numTopics = 10
+  val numWords = trainingData.head.size
+  val oneBlockCount = (trainingData.length / parallelBlock).toInt
+  val dataBlocks = for (i <- 0 until parallelBlock) yield trainingData.zipWithIndex.slice(i * oneBlockCount, if ((i + 1) * oneBlockCount > trainingData.length) trainingData.length else (i + 1) * oneBlockCount)
+  val actors = for (i <- 0 until parallelBlock) yield system.actorOf(Props(classOf[ModelTrainer], remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length), "lookupActor")
 
-  system.scheduler.schedule(100 millis, 100 millis) {
-    actor ! reportLL
+  def bootstrap(counts: Int): Unit = {
+    for (i <- 0 until counts) {
+      for (actor <- actors) {
+        actor ! requestTermWeight
+        actor ! requestTopicMixes
+      }
+    }
   }
-
-  def doSomething(op: RequireMsg): Unit =
-    actor ! op
-  //#setup
 
   def startup() {
   }
@@ -52,6 +55,7 @@ class ModelActor extends Bootable {
 }
 
 object ModelActor {
+
   case class Params(dburl: String,
                     dbuser: String,
                     dbpasswd: String,
@@ -64,7 +68,6 @@ object ModelActor {
     val config = CommandLineParser.parseArguments(args)._1
     val params = config.readIn[Params]("")
     import params._
-    import TopicModel._
 
     // Feature map
     val fmap = Index[String]()
@@ -80,15 +83,21 @@ object ModelActor {
       text <- values
     } yield {
       val builder = new VectorBuilder[Double](Int.MaxValue, text.length / 20)
-      for(tok <- smartcnTokenizer(text) if tok(0).isLetter && removeStopWords(tok)) {
+      for (tok <- smartcnTokenizer(text) if tok(0).isLetter && removeStopWords(tok)) {
         println(tok)
         builder.add(fmap.index(tok), 1.0)
       }
       builder
     }
 
-    val trainingData = almostTrainingData.map{ b => b.length = fmap.size; b.toSparseVector}
+    val trainingData = almostTrainingData.map {
+      b => b.length = fmap.size; b.toSparseVector
+    }
 
+    val app = new ModelActor(params, trainingData)
+    app.bootstrap(10)
+
+    /*
     val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)
 
     val model = rec.iterations(trainingData).tee(m => println(m.likelihood)).last
@@ -101,8 +110,6 @@ object ModelActor {
       println("Topic %d:".format(k))
       println(list.mkString("\t","\n\t", "\n"))
     }
-
-    val app = new ModelActor
-    println("Started Adaptor Application")
-    app.doSomething(checkDB())  }
+    */
+  }
 }
