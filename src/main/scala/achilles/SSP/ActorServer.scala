@@ -9,34 +9,23 @@ package achilles.SSP
 
 import akka.actor.{ActorSystem, ActorLogging, Actor, ActorRef, Props}
 import akka.kernel.Bootable
-import akka.pattern._
-import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
-import scala.concurrent.Future
+import breeze.linalg.{DenseVector, DenseMatrix}
 
 //#actor
-class ActorServer(streamActor: ActorRef, dbActor: ActorRef) extends Actor with ActorLogging {
+class ActorServer(numTopics: Int, numWords: Int) extends Actor with ActorLogging {
+  var termWeight: DenseMatrix[Double] = DenseMatrix.rand(numTopics, numWords) / numWords.toDouble
+  var topicMixes: Array[DenseVector[Double]] = new Array[DenseVector[Double]](numDocs)
+
   def receive = {
-    case QueryRecom(uid, content, location) =>
-      log.info("Query recommendation from Rec Actor")
-
-      implicit val timeout = Timeout(1.second)
-      val streamFuture = streamActor ? QueryRecom(uid, content, location)
-      val dbFuture = dbActor ? QueryRecom(uid, content, location)
-      val requester = sender
-
-      streamFuture map {
-        requester.!
-      } recover {
-        case _ => dbFuture map {
-          requester.!
-        } recover {
-          case _ => log.info("Time out both in streaming and database recommendation")
-        }
-      }
+    case updateTermWeight(tw) =>
+      termWeight += tw // Here need more details
+    case updateTopicMixes(tm, i) =>
+      topicMixes(i) = tm
+    case requestTermWeight =>
+      sender ! feedTermWeight(termWeight)
+    case requestTopicMixes =>
+      sender ! feedTopicMixes(topicMixes)
   }
 }
 //#actor
@@ -56,7 +45,7 @@ class MainServerApp extends Bootable {
   }
 }
 
-object RecApp {
+object ActorServer {
   def main(args: Array[String]) {
     new MainServerApp
     println("Started Calculator Application - waiting for messages")

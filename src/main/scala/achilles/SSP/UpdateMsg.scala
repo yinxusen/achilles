@@ -3,13 +3,15 @@
  */
 package achilles.SSP
 
-import akka.actor.Actor
+import breeze.linalg._
 
-trait UpdateMsg
+trait ServerMsg
+trait WorkerMsg
 
-case class QueryRecom(uid: String, content: String, loc: String) extends UpdateMsg
-case class checkDB() extends UpdateMsg
+case class updateTermWeight(updater: DenseMatrix[Double]) extends ServerMsg
+case class updateTopicMixes(updater: DenseVector[Double], idx: Int) extends ServerMsg
+case class requestTermWeight() extends ServerMsg
+case class requestTopicMixes() extends ServerMsg
 
-trait RecResult
-
-case class BasicRecResult(uid: String, rec: String, rank: Int) extends RecResult
+case class feedTermWeight(termWeight: DenseMatrix[Double]) extends WorkerMsg
+case class feedTopicMixes(topicMixes: Array[DenseVector[Double]]) extends WorkerMsg
