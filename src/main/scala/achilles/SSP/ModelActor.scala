@@ -20,15 +20,16 @@ import chalk.text.tokenize.JavaWordTokenizer
 import chalk.text.transform.StopWordFilter
 import scala.io._
 import breeze.util.Implicits._
+import scala.concurrent._
+import ExecutionContext.Implicits.global
 
 
 class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVector[Double]]) extends Bootable {
   //#setup
   val system =
     ActorSystem("ModelActor", ConfigFactory.load.getConfig("modelactor"))
-  val remotePath =
-    "akka.tcp://ServerActorApp@127.0.0.1:2552/user/ServerActor"
-  val parallelBlock = 10
+  val remotePath = "akka.tcp://ServerActorApp@127.0.0.1:2552/user/ServerActor"
+  val parallelBlock = 5
   val numTopics = params.numTopics
   val numWords = trainingData.head.size
   val oneBlockCount = (trainingData.length / parallelBlock)
@@ -38,8 +39,10 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
   def bootstrap(counts: Int): Unit = {
     for (i <- 0 until counts) {
       for (actor <- actors) {
-        actor ! requestTermWeight
-        actor ! requestTopicMixes
+        Thread.sleep(10000)
+        println("send message to wokers")
+        actor ! startFetchTermWeight
+        actor ! startFetchTopicMixes
       }
     }
   }
@@ -86,11 +89,13 @@ object ModelActor {
       b => b.length = fmap.size; b.toSparseVector
     }
 
-    new ServerActorApp(params.numTopics, trainingData.head.size, trainingData.length)
+    future {
+      new ServerActorApp(params.numTopics, trainingData.head.size, trainingData.length)
+    }
     println("server start up...")
     val app = new ModelActor(params, trainingData)
     println("worker start up...")
-    app.bootstrap(10)
+    app.bootstrap(100)
 
     /*
     val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)

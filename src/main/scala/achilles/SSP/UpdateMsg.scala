@@ -21,4 +21,8 @@ case class feedTermWeight(termWeight: DenseMatrix[Double]) extends WorkerMsg
 
 case class feedTopicMixes(topicMixes: Array[DenseVector[Double]]) extends WorkerMsg
 
+case class startFetchTermWeight() extends WorkerMsg
+
+case class startFetchTopicMixes() extends WorkerMsg
+
 case class reportLL() extends ServerMsg

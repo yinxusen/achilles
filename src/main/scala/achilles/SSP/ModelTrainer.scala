@@ -37,6 +37,7 @@ class ModelTrainer(path: String, params: ModelActor.Params, trainingData: Indexe
 
   def receive = {
     case ActorIdentity(`path`, Some(actor)) =>
+      println("get ready!")
       context.setReceiveTimeout(Duration.Undefined)
       context.become(active(actor))
     case ActorIdentity(`path`, None) => println(s"Remote actor not availible: $path")
@@ -45,20 +46,27 @@ class ModelTrainer(path: String, params: ModelActor.Params, trainingData: Indexe
   }
 
   def runNTimes(tw: DenseMatrix[Double]): Model = {
-    rec.iterations(dataset, tw, lastTopicMixes).last
+    rec.iterations(dataset, tw, lastTopicMixes).tee(m => println(m.likelihood)).last
   }
 
   def runNTimes(tm: Array[DenseVector[Double]]): Model = {
-    rec.iterations(dataset, lastTermWeights, tm).last
+    rec.iterations(dataset, lastTermWeights, tm).tee(m => println(m.likelihood)).last
   }
 
   def active(actor: ActorRef): Actor.Receive = {
+    case startFetchTopicMixes =>
+      println("ask for topic mixes")
+      actor ! requestTopicMixes(indexes)
+    case startFetchTermWeight =>
+      println("ask for term weights")
+      actor ! requestTermWeight
     case feedTermWeight(tw) =>
+      println("feedTermWeight")
       val newModel = runNTimes(tw)
       sender ! updateTermWeight(newModel.termWeights)
       sender ! updateTopicMixes(newModel.topicMixes, indexes)
-
     case feedTopicMixes(tm) =>
+      println("feedTopicMixes")
       val newModel = runNTimes(tm)
       sender ! updateTermWeight(newModel.termWeights)
       sender ! updateTopicMixes(newModel.topicMixes, indexes)
