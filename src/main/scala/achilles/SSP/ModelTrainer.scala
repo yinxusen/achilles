@@ -46,10 +46,12 @@ class ModelTrainer(path: String, params: ModelActor.Params, trainingData: Indexe
   }
 
   def runNTimes(tw: DenseMatrix[Double]): Model = {
+    lastTermWeights = tw
     rec.iterations(dataset, tw, lastTopicMixes).tee(m => println(m.likelihood)).last
   }
 
   def runNTimes(tm: Array[DenseVector[Double]]): Model = {
+    lastTopicMixes = tm
     rec.iterations(dataset, lastTermWeights, tm).tee(m => println(m.likelihood)).last
   }
 

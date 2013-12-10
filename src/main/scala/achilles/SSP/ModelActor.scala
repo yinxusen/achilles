@@ -95,7 +95,7 @@ object ModelActor {
     println("server start up...")
     val app = new ModelActor(params, trainingData)
     println("worker start up...")
-    app.bootstrap(100)
+    app.bootstrap(5)
 
     /*
     val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)
