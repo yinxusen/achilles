@@ -33,7 +33,7 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
   val numWords = trainingData.head.size
   val oneBlockCount = (trainingData.length / parallelBlock)
   val dataBlocks = for (i <- 0 until parallelBlock) yield trainingData.zipWithIndex.slice(i * oneBlockCount, if ((i + 1) * oneBlockCount > trainingData.length) trainingData.length else (i + 1) * oneBlockCount)
-  val actors = for (i <- 0 until parallelBlock) yield system.actorOf(Props(classOf[ModelTrainer], remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length), "lookupActor")
+  val actors = for (i <- 0 until parallelBlock) yield system.actorOf(Props(classOf[ModelTrainer], remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length), "wokers-"+i)
 
   def bootstrap(counts: Int): Unit = {
     for (i <- 0 until counts) {
@@ -54,7 +54,7 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
 
 object ModelActor {
 
-  case class Params(dir: File,
+  case class Params(dir: File = new File("/home/sen/test"),
                     numTopics: Int = 20,
                     topicSmoothing: Double = .1,
                     wordSmoothing: Double = 0.1)

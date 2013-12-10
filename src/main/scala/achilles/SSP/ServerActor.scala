@@ -30,8 +30,7 @@ class ServerActor(numTopics: Int, numWords: Int, numDocs: Int) extends Actor wit
 
 class ServerActorApp(numTopics: Int, numWords: Int, numDocs: Int) extends Bootable {
   //#setup
-  val system = ActorSystem("ServerActorApp",
-    ConfigFactory.load.getConfig("serveractor"))
+  val system = ActorSystem("ServerActorApp", ConfigFactory.load.getConfig("serveractor"))
   val actor = system.actorOf(Props(classOf[ServerActor], numTopics, numWords, numDocs), "ServerActor")
   //#setup
 
