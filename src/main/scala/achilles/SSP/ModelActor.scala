@@ -59,7 +59,7 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
 
 object ModelActor {
 
-  case class Params(dir: File = new File("/home/lian/test"),
+  case class Params(dir: File = new File("/home/sen/test"),
                     numTopics: Int = 20,
                     topicSmoothing: Double = .1,
                     wordSmoothing: Double = 0.1)
