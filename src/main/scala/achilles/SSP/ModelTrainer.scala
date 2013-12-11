@@ -3,20 +3,8 @@ package achilles.SSP
 import breeze.linalg._
 import scala.concurrent.duration._
 import akka.actor._
-import akka.actor.ActorIdentity
-import scala.Some
-import akka.actor.Identify
 import breeze.util.Implicits._
 
-/**
- * This is the class of ModelTrainer which only knows itself.
- * @param path
- * @param params
- * @param trainingData
- * @param numWords
- * @param numTopics
- * @param numDocs
- */
 class ModelTrainer(
     path: String,
     params: ModelActor.Params,
@@ -65,22 +53,22 @@ class ModelTrainer(
   }
 
   def active(actor: ActorRef): Actor.Receive = {
-    case startFetchTopicMixes =>
+    case StartFetchTopicMixes =>
       println("ask for topic mixes")
-      actor ! requestTopicMixes(indexes)
-    case startFetchTermWeight =>
+      actor ! RequestTopicMixes(indexes)
+    case StartFetchTermWeight =>
       println("ask for term weights")
-      actor ! requestTermWeight
-    case feedTermWeight(tw) =>
+      actor ! RequestTermWeight
+    case FeedTermWeight(tw) =>
       println("feedTermWeight")
       val newModel = runNTimes(tw)
-      sender ! updateTermWeight(newModel.termWeights)
-      sender ! updateTopicMixes(newModel.topicMixes, indexes)
-    case feedTopicMixes(tm) =>
+      sender ! UpdateTermWeight(newModel.termWeights)
+      sender ! UpdateTopicMixes(newModel.topicMixes, indexes)
+    case FeedTopicMixes(tm) =>
       println("feedTopicMixes")
       val newModel = runNTimes(tm)
-      sender ! updateTermWeight(newModel.termWeights)
-      sender ! updateTopicMixes(newModel.topicMixes, indexes)
+      sender ! UpdateTermWeight(newModel.termWeights)
+      sender ! UpdateTopicMixes(newModel.topicMixes, indexes)
   }
 }
 
@@ -92,7 +80,7 @@ object ModelTrainer {
       numWords: Int,
       numTopics: Int,
       numDocs: Int) =
-    Props(classOf[ModelTrainer], remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length)
+    Props(classOf[ModelTrainer], path, params, trainingData, numWords, numTopics, numDocs)
 }
 
 // vim: set ts=4 sw=4 et:

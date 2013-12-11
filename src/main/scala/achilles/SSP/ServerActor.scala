@@ -13,21 +13,21 @@ class ServerActor(numTopics: Int, numWords: Int, numDocs: Int) extends Actor wit
   var topicMixes: Array[DenseVector[Double]] = new Array[DenseVector[Double]](numDocs)
 
   def receive = {
-    case updateTermWeight(tw) =>
+    case UpdateTermWeight(tw) =>
       println("update term weight from " + sender.toString)
       termWeight += tw // Here need more details
-    case updateTopicMixes(tm, idx) =>
+    case UpdateTopicMixes(tm, idx) =>
       println("update topic mixes from " + sender.toString)
       for ((id, j) <- idx.zipWithIndex) topicMixes.update(j, tm(id))
-    case requestTermWeight =>
+    case RequestTermWeight =>
       println("send term weight to " + sender.toString)
-      sender ! feedTermWeight(termWeight)
-    case requestTopicMixes(idx) =>
+      sender ! FeedTermWeight(termWeight)
+    case RequestTopicMixes(idx) =>
       println("send topic mixes to " + sender.toString)
-      sender ! feedTopicMixes(idx map {
+      sender ! FeedTopicMixes(idx map {
         topicMixes(_)
       })
-    case reportLL =>
+    case ReportLL =>
 
   }
 }

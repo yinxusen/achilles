@@ -9,20 +9,20 @@ trait ServerMsg
 
 trait WorkerMsg
 
-case class updateTermWeight(updater: DenseMatrix[Double]) extends ServerMsg
+case class UpdateTermWeight(updater: DenseMatrix[Double]) extends ServerMsg
 
-case class updateTopicMixes(updater: Array[DenseVector[Double]], idx: Array[Int]) extends ServerMsg
+case class UpdateTopicMixes(updater: Array[DenseVector[Double]], idx: Array[Int]) extends ServerMsg
 
-case class requestTermWeight() extends ServerMsg
+case object RequestTermWeight extends ServerMsg
 
-case class requestTopicMixes(idx: Array[Int]) extends ServerMsg
+case class RequestTopicMixes(idx: Array[Int]) extends ServerMsg
 
-case class feedTermWeight(termWeight: DenseMatrix[Double]) extends WorkerMsg
+case class FeedTermWeight(termWeight: DenseMatrix[Double]) extends WorkerMsg
 
-case class feedTopicMixes(topicMixes: Array[DenseVector[Double]]) extends WorkerMsg
+case class FeedTopicMixes(topicMixes: Array[DenseVector[Double]]) extends WorkerMsg
 
-case class startFetchTermWeight() extends WorkerMsg
+case object StartFetchTermWeight extends WorkerMsg
 
-case class startFetchTopicMixes() extends WorkerMsg
+case object StartFetchTopicMixes extends WorkerMsg
 
-case class reportLL() extends ServerMsg
+case object ReportLL extends ServerMsg
