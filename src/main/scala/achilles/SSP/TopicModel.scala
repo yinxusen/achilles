@@ -7,11 +7,9 @@ import breeze.numerics._
 // easy for bean
 
 
-class TopicModel(numTopics: Int, topicSmoothing: Double = 0.5, wordSmoothing: Double = 0.05, numIterations: Int = 5) {
+class TopicModel(numTopics: Int, topicSmoothing: Double = 0.5, wordSmoothing: Double = 0.05, numIterations: Int = 1) {
 
   import TopicModel._
-
-  // def fitModel(data: IndexedSeq[SparseVector[Double]]): Model = iterations(data).drop(1).take(numIterations).last
 
   def iterations(data: IndexedSeq[SparseVector[Double]], termWeights: DenseMatrix[Double], topicMixes: Array[DenseVector[Double]]): Iterator[Model] = {
     val numWords = data.head.size

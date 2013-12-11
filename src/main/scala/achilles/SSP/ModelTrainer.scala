@@ -17,12 +17,21 @@ import breeze.util.Implicits._
  * @param numTopics
  * @param numDocs
  */
-class ModelTrainer(path: String, params: ModelActor.Params, trainingData: IndexedSeq[(SparseVector[Double], Int)], numWords: Int, numTopics: Int, numDocs: Int) extends Actor with ActorLogging {
+class ModelTrainer(
+    path: String,
+    params: ModelActor.Params,
+    trainingData: IndexedSeq[(SparseVector[Double], Int)],
+    numWords: Int,
+    numTopics: Int,
+    numDocs: Int)
+  extends Actor with ActorLogging {
 
   import TopicModel._
 
-  context.setReceiveTimeout(3.seconds)
-  sendIdentifyRequest()
+  override def preStart() {
+    context.setReceiveTimeout(3.seconds)
+    sendIdentifyRequest()
+  }
 
   val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)
 
@@ -73,6 +82,17 @@ class ModelTrainer(path: String, params: ModelActor.Params, trainingData: Indexe
       sender ! updateTermWeight(newModel.termWeights)
       sender ! updateTopicMixes(newModel.topicMixes, indexes)
   }
+}
+
+object ModelTrainer {
+  def props(
+      path: String,
+      params: ModelActor.Params,
+      trainingData: IndexedSeq[(SparseVector[Double], Int)],
+      numWords: Int,
+      numTopics: Int,
+      numDocs: Int) =
+    Props(classOf[ModelTrainer], remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length)
 }
 
 // vim: set ts=4 sw=4 et:

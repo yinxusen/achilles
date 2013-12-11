@@ -29,18 +29,20 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
   val system =
     ActorSystem("ModelActor", ConfigFactory.load.getConfig("modelactor"))
   val remotePath = "akka.tcp://ServerActorApp@127.0.0.1:2552/user/ServerActor"
-  val parallelBlock = 5
+  val parallelBlock = 1
   val numTopics = params.numTopics
   val numWords = trainingData.head.size
-  val oneBlockCount = (trainingData.length / parallelBlock)
+  val oneBlockCount = trainingData.length / parallelBlock
   val dataBlocks = for (i <- 0 until parallelBlock) yield trainingData.zipWithIndex.slice(i * oneBlockCount, if ((i + 1) * oneBlockCount > trainingData.length) trainingData.length else (i + 1) * oneBlockCount)
-  val actors = for (i <- 0 until parallelBlock) yield system.actorOf(Props(classOf[ModelTrainer], remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length), "wokers-"+i)
+  val actors =
+    for (i <- 0 until parallelBlock) yield
+      system.actorOf(ModelTrainer.props(remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length), "workers-"+i)
 
   def bootstrap(counts: Int): Unit = {
     for (i <- 0 until counts) {
       for (actor <- actors) {
         Thread.sleep(10000)
-        println("send message to wokers")
+        println("send message to workers")
         actor ! startFetchTermWeight
         actor ! startFetchTopicMixes
       }
@@ -89,13 +91,11 @@ object ModelActor {
       b => b.length = fmap.size; b.toSparseVector
     }
 
-    future {
-      new ServerActorApp(params.numTopics, trainingData.head.size, trainingData.length)
-    }
+    new ServerActorApp(params.numTopics, trainingData.head.size, trainingData.length)
     println("server start up...")
     val app = new ModelActor(params, trainingData)
     println("worker start up...")
-    app.bootstrap(5)
+    app.bootstrap(1)
 
     /*
     val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)
