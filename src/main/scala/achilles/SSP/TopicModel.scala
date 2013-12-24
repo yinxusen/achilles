@@ -83,8 +83,6 @@ object TopicModel {
         while (i < doc.activeSize) {
           val result = normalize(alpha :* termWeights(::, doc.indexAt(i)), 1)
           assert(!norm(result).isNaN, gamma(::, i).toString + " " + alpha.toString + " " + termWeights(::, doc.indexAt(i)))
-
-          converged &&= norm(gamma(::, i) - result, Double.PositiveInfinity) < 1E-4
           gamma(::, i) := result
           newAlpha += (result * doc.valueAt(i))
           i += 1

@@ -5,7 +5,9 @@ version := "0.1"
 scalaVersion := "2.10.2"
 
 resolvers ++= Seq(
-  "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
+  "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
+  "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
+  "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/releases/"
 )
 
 libraryDependencies ++= Seq(
