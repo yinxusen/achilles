@@ -14,20 +14,21 @@ class ServerActor(numTopics: Int, numWords: Int, numDocs: Int) extends Actor wit
 
   def receive = {
     case UpdateTermWeight(tw) =>
-      println("update term weight from " + sender.toString)
+      log.info("update term weight from {}", sender)
       termWeight += tw // Here need more details
     case UpdateTopicMixes(tm, idx) =>
-      println("update topic mixes from " + sender.toString)
+      log.info("update topic mixes from {}", sender)
       for ((id, j) <- idx.zipWithIndex) topicMixes.update(j, tm(id))
     case RequestTermWeight =>
-      println("send term weight to " + sender.toString)
+      log.info("send term weight to {}", sender)
       sender ! FeedTermWeight(termWeight)
     case RequestTopicMixes(idx) =>
-      println("send topic mixes to " + sender.toString)
+      log.info("send topic mixes to {}", sender)
       sender ! FeedTopicMixes(idx map {
         topicMixes(_)
       })
     case ReportLL =>
+      log.info("Report likelihood to master.")
 
   }
 }

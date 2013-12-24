@@ -54,18 +54,18 @@ class ModelTrainer(
 
   def active(actor: ActorRef): Actor.Receive = {
     case StartFetchTopicMixes =>
-      println("ask for topic mixes")
+      log.info("ask for topic mixes")
       actor ! RequestTopicMixes(indexes)
     case StartFetchTermWeight =>
-      println("ask for term weights")
+      log.info("ask for term weights")
       actor ! RequestTermWeight
     case FeedTermWeight(tw) =>
-      println("feedTermWeight")
+      log.info("feedTermWeight to {}", sender)
       val newModel = runNTimes(tw)
       sender ! UpdateTermWeight(newModel.termWeights)
       sender ! UpdateTopicMixes(newModel.topicMixes, indexes)
     case FeedTopicMixes(tm) =>
-      println("feedTopicMixes")
+      log.info("feedTopicMixes to {}", sender)
       val newModel = runNTimes(tm)
       sender ! UpdateTermWeight(newModel.termWeights)
       sender ! UpdateTopicMixes(newModel.topicMixes, indexes)

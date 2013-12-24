@@ -12,17 +12,11 @@ import akka.actor._
 import akka.kernel.Bootable
 
 import breeze.linalg._
-import breeze.numerics._
 import breeze.config.CommandLineParser
 import breeze.util.Index
 import java.io.File
 import chalk.text.tokenize.JavaWordTokenizer
-import chalk.text.transform.StopWordFilter
 import scala.io._
-import breeze.util.Implicits._
-import scala.concurrent._
-import ExecutionContext.Implicits.global
-
 
 class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVector[Double]]) extends Bootable {
   //#setup
@@ -33,10 +27,16 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
   val numTopics = params.numTopics
   val numWords = trainingData.head.size
   val oneBlockCount = trainingData.length / parallelBlock
-  val dataBlocks = for (i <- 0 until parallelBlock) yield trainingData.zipWithIndex.slice(i * oneBlockCount, if ((i + 1) * oneBlockCount > trainingData.length) trainingData.length else (i + 1) * oneBlockCount)
+  val dataBlocks =
+    for (i <- 0 until parallelBlock)
+      yield trainingData.zipWithIndex.slice(i * oneBlockCount,
+        if ((i + 1) * oneBlockCount > trainingData.length) trainingData.length
+        else (i + 1) * oneBlockCount)
+
   val actors =
     for (i <- 0 until parallelBlock) yield
-      system.actorOf(ModelTrainer.props(remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length), "workers-"+i)
+      system.actorOf(ModelTrainer
+        .props(remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length), "workers-"+i)
 
   def bootstrap(counts: Int): Unit = {
     for (i <- 0 until counts) {
@@ -88,7 +88,9 @@ object ModelActor {
     }
 
     val trainingData = almostTrainingData.map {
-      b => b.length = fmap.size; b.toSparseVector
+      b: VectorBuilder[Double] =>
+        b.length = fmap.size
+        b.toSparseVector
     }
 
     new ServerActorApp(params.numTopics, trainingData.head.size, trainingData.length)
@@ -99,7 +101,7 @@ object ModelActor {
 
     /*
     val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)
-
+                                                  Double] =
     val model = rec.iterations(trainingData).tee(m => println(m.likelihood)).last
     for( (list, k) <- model.topicMixes zip keys) {
       println("Doc %s:".format(k))
