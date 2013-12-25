@@ -18,6 +18,7 @@ import java.io.File
 import chalk.text.tokenize.JavaWordTokenizer
 import scala.io._
 import akka.event.Logging
+import scala.util.Random
 
 class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVector[Double]]) extends Bootable {
   //#setup
@@ -49,10 +50,8 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
   def bootstrap(counts: Int): Unit = {
     for (i <- 0 until counts) {
       for (actor <- actors) {
-        Thread.sleep(10000)
-        println("send message to workers")
-        actor ! StartFetchTermWeight
-        actor ! StartFetchTopicMixes
+        // Thread.sleep(10000)
+        if(Random.nextBoolean) actor ! StartFetchTermWeight else actor ! StartFetchTopicMixes
       }
     }
   }
