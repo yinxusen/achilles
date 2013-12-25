@@ -49,10 +49,11 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
       system.actorOf(ModelTrainer
         .props(remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length, staleness), "workers-"+i)
 
+
   def bootstrap(counts: Int): Unit = {
     for (i <- 0 until counts) {
       for (actor <- actors) {
-        // Thread.sleep(10000)
+        Thread.sleep(10000)
         if(Random.nextBoolean) actor ! StartFetchTermWeight else actor ! StartFetchTopicMixes
       }
     }

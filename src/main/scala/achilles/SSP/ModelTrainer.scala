@@ -87,8 +87,9 @@ object ModelTrainer {
       trainingData: IndexedSeq[(SparseVector[Double], Int)],
       numWords: Int,
       numTopics: Int,
-      numDocs: Int) =
-    Props(classOf[ModelTrainer], path, params, trainingData, numWords, numTopics, numDocs)
+      numDocs: Int,
+      staleness: Int) =
+    Props(classOf[ModelTrainer], path, params, trainingData, numWords, numTopics, numDocs, staleness)
 }
 
 // vim: set ts=4 sw=4 et:
