@@ -27,8 +27,8 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
   val log = system.log
   val remotePath = "akka.tcp://ServerActorApp@127.0.0.1:2552/user/ServerActor"
 
-  val staleness = 4
-  val parallelBlock = 3
+  val staleness = 30
+  val parallelBlock = 1
   val numTopics = params.numTopics
   val numWords = trainingData.head.size
   val oneBlockCount = trainingData.length / parallelBlock
@@ -50,10 +50,10 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
         .props(remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length, staleness), "workers-"+i)
 
 
+  Thread.sleep(10000)
   def bootstrap(counts: Int): Unit = {
     for (i <- 0 until counts) {
       for (actor <- actors) {
-        Thread.sleep(10000)
         if(Random.nextBoolean) actor ! StartFetchTermWeight else actor ! StartFetchTopicMixes
       }
     }
@@ -107,7 +107,7 @@ object ModelActor {
     println("server start up...")
     val app = new ModelActor(params, trainingData)
     println("worker start up...")
-    app.bootstrap(10)
+    app.bootstrap(30)
 
     /*
     val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)

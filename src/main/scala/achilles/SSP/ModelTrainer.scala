@@ -50,13 +50,15 @@ class ModelTrainer(
 
   def runNTimes(tw: DenseMatrix[Double]): Model = {
     lastTermWeights = tw
-    val numIterations = Random.nextInt(staleness)
+    val numIterations = Random.nextInt(staleness) + 1
+    log.info("Iterate {} times in termWeight changed.", numIterations)
     rec.iterations(dataset, tw, lastTopicMixes, numIterations).tee(m => println(m.likelihood)).last
   }
 
   def runNTimes(tm: Array[DenseVector[Double]]): Model = {
     lastTopicMixes = tm
-    val numIterations = Random.nextInt(staleness)
+    val numIterations = Random.nextInt(staleness) + 1
+    log.info("Iterate {} times in topic mix changed.", numIterations)
     rec.iterations(dataset, lastTermWeights, tm, numIterations).tee(m => println(m.likelihood)).last
   }
 
