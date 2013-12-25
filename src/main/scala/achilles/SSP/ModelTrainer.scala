@@ -29,6 +29,10 @@ class ModelTrainer(
   val indexes = trainingData.map(x => x._2).toArray
   val dataset = trainingData.map(x => x._1)
 
+  log.info("number of docs: {}", numDocs)
+  log.info("indexes: {}", indexes)
+  log.info("number of dataset: {}", dataset.length)
+
   def sendIdentifyRequest(): Unit =
     context.actorSelection(path) ! Identify(path)
 

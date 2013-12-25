@@ -17,11 +17,13 @@ import breeze.util.Index
 import java.io.File
 import chalk.text.tokenize.JavaWordTokenizer
 import scala.io._
+import akka.event.Logging
 
 class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVector[Double]]) extends Bootable {
   //#setup
   val system =
     ActorSystem("ModelActor", ConfigFactory.load.getConfig("modelactor"))
+  val log = system.log
   val remotePath = "akka.tcp://ServerActorApp@127.0.0.1:2552/user/ServerActor"
   val parallelBlock = 3
   val numTopics = params.numTopics
@@ -32,6 +34,12 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
       yield trainingData.zipWithIndex.slice(i * oneBlockCount,
         if ((i + 1) * oneBlockCount > trainingData.length) trainingData.length
         else (i + 1) * oneBlockCount)
+
+  log.info("number of words: {}", numWords)
+  log.info("number of docs: {}", trainingData.length)
+  log.info("one block counts: {}", oneBlockCount)
+  log.info("length of data blocks: {}", dataBlocks.length)
+  log.info("data blocks first block count: {}", dataBlocks.head.length)
 
   val actors =
     for (i <- 0 until parallelBlock) yield
