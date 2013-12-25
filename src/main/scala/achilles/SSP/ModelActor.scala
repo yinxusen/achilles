@@ -26,6 +26,8 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
     ActorSystem("ModelActor", ConfigFactory.load.getConfig("modelactor"))
   val log = system.log
   val remotePath = "akka.tcp://ServerActorApp@127.0.0.1:2552/user/ServerActor"
+
+  val staleness = 4
   val parallelBlock = 3
   val numTopics = params.numTopics
   val numWords = trainingData.head.size
@@ -45,7 +47,7 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
   val actors =
     for (i <- 0 until parallelBlock) yield
       system.actorOf(ModelTrainer
-        .props(remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length), "workers-"+i)
+        .props(remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length, staleness), "workers-"+i)
 
   def bootstrap(counts: Int): Unit = {
     for (i <- 0 until counts) {

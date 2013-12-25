@@ -4,6 +4,7 @@ import breeze.linalg._
 import scala.concurrent.duration._
 import akka.actor._
 import breeze.util.Implicits._
+import scala.util.Random
 
 class ModelTrainer(
     path: String,
@@ -11,7 +12,8 @@ class ModelTrainer(
     trainingData: IndexedSeq[(SparseVector[Double], Int)],
     numWords: Int,
     numTopics: Int,
-    numDocs: Int)
+    numDocs: Int,
+    staleness: Int = 1)
   extends Actor with ActorLogging {
 
   import TopicModel._
@@ -48,12 +50,14 @@ class ModelTrainer(
 
   def runNTimes(tw: DenseMatrix[Double]): Model = {
     lastTermWeights = tw
-    rec.iterations(dataset, tw, lastTopicMixes).tee(m => println(m.likelihood)).last
+    val numIterations = Random.nextInt(staleness)
+    rec.iterations(dataset, tw, lastTopicMixes, numIterations).tee(m => println(m.likelihood)).last
   }
 
   def runNTimes(tm: Array[DenseVector[Double]]): Model = {
     lastTopicMixes = tm
-    rec.iterations(dataset, lastTermWeights, tm).tee(m => println(m.likelihood)).last
+    val numIterations = Random.nextInt(staleness)
+    rec.iterations(dataset, lastTermWeights, tm, numIterations).tee(m => println(m.likelihood)).last
   }
 
   def active(actor: ActorRef): Actor.Receive = {
