@@ -7,11 +7,19 @@ import breeze.numerics._
 // easy for bean
 
 
-class TopicModel(numTopics: Int, topicSmoothing: Double = 0.5, wordSmoothing: Double = 0.05, numIterations: Int = 1) {
+class TopicModel(numTopics: Int, topicSmoothing: Double = 0.5, wordSmoothing: Double = 0.05) {
 
   import TopicModel._
 
-  def iterations(data: IndexedSeq[SparseVector[Double]], termWeights: DenseMatrix[Double], topicMixes: Array[DenseVector[Double]]): Iterator[Model] = {
+  def iterations(data: IndexedSeq[SparseVector[Double]],
+                 termWeights: DenseMatrix[Double],
+                 topicMixes: Array[DenseVector[Double]],
+                 numIterations: Int = 1): Iterator[Model] =
+    lazyIterations(data, termWeights, topicMixes).drop(1).take(numIterations)
+
+  def lazyIterations(data: IndexedSeq[SparseVector[Double]],
+                 termWeights: DenseMatrix[Double],
+                 topicMixes: Array[DenseVector[Double]]): Iterator[Model] = {
     val numWords = data.head.size
     val numDocs = data.size
 
@@ -56,7 +64,7 @@ class TopicModel(numTopics: Int, topicSmoothing: Double = 0.5, wordSmoothing: Do
         current.copy(newCounts, topics, ll)
     }
 
-  }.drop(1).take(numIterations)
+  }
 }
 
 object TopicModel {
