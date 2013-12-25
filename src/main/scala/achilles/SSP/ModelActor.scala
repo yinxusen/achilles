@@ -23,7 +23,7 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
   val system =
     ActorSystem("ModelActor", ConfigFactory.load.getConfig("modelactor"))
   val remotePath = "akka.tcp://ServerActorApp@127.0.0.1:2552/user/ServerActor"
-  val parallelBlock = 1
+  val parallelBlock = 3
   val numTopics = params.numTopics
   val numWords = trainingData.head.size
   val oneBlockCount = trainingData.length / parallelBlock
@@ -97,7 +97,7 @@ object ModelActor {
     println("server start up...")
     val app = new ModelActor(params, trainingData)
     println("worker start up...")
-    app.bootstrap(1)
+    app.bootstrap(10)
 
     /*
     val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)
