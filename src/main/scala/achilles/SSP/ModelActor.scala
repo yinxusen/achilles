@@ -28,6 +28,7 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
   val remotePath = "akka.tcp://ServerActorApp@127.0.0.1:2552/user/ServerActor"
 
   val staleness = 30
+  val iterations = 30
   val parallelBlock = 1
   val numTopics = params.numTopics
   val numWords = trainingData.head.size
@@ -38,26 +39,16 @@ class ModelActor(params: ModelActor.Params, trainingData: IndexedSeq[SparseVecto
         if ((i + 1) * oneBlockCount > trainingData.length) trainingData.length
         else (i + 1) * oneBlockCount)
 
-  log.info("number of words: {}", numWords)
-  log.info("number of docs: {}", trainingData.length)
-  log.info("one block counts: {}", oneBlockCount)
-  log.info("length of data blocks: {}", dataBlocks.length)
-  log.info("data blocks first block count: {}", dataBlocks.head.length)
+  log.debug(s"number of words: ${numWords}")
+  log.debug(s"number of docs: ${trainingData.length}")
+  log.debug(s"one block counts: ${oneBlockCount}")
+  log.debug(s"length of data blocks: ${dataBlocks.length}")
+  log.debug(s"data blocks first block count: ${dataBlocks.head.length}")
 
   val actors =
     for (i <- 0 until parallelBlock) yield
       system.actorOf(ModelTrainer
-        .props(remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length, staleness), "workers-"+i)
-
-
-  Thread.sleep(10000)
-  def bootstrap(counts: Int): Unit = {
-    for (i <- 0 until counts) {
-      for (actor <- actors) {
-        if(Random.nextBoolean) actor ! StartFetchTermWeight else actor ! StartFetchTopicMixes
-      }
-    }
-  }
+        .props(remotePath, params, dataBlocks(i), numWords, numTopics, dataBlocks(i).length, iterations, staleness), "workers-"+i)
 
   def startup() {
   }
@@ -105,10 +96,8 @@ object ModelActor {
 
     new ServerActorApp(params.numTopics, trainingData.head.size, trainingData.length)
     println("server start up...")
-    val app = new ModelActor(params, trainingData)
+    new ModelActor(params, trainingData)
     println("worker start up...")
-    app.bootstrap(30)
-
     /*
     val rec = new TopicModel(params.numTopics, params.topicSmoothing, params.wordSmoothing)
                                                   Double] =
