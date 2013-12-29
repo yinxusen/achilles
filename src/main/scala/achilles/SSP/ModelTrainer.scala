@@ -21,9 +21,11 @@ class ModelTrainer(
   import TopicModel._
 
   override def preStart() {
-    sendIdentifyRequest()
-    implicit val timeout = Timeout(3.seconds)
+    achilles.util.help.retry(3)(selfBoot)
+  }
 
+  def selfBoot(): Unit = {
+    implicit val timeout = Timeout(3.seconds)
     context.actorSelection(path).resolveOne() map {
       case ActorIdentity(_, Some(actor)) =>
         log.info(s"${this.getClass.getName} get ready!")
@@ -52,9 +54,6 @@ class ModelTrainer(
   log.debug(s"Number of docs: $numDocs")
   log.debug(s"indexes: $indexes")
   log.debug(s"number of dataset: ${dataset.length}")
-
-  def sendIdentifyRequest(): Unit =
-    context.actorSelection(path) ! Identify(path)
 
   def receive = {
     case _ => log.info(s" ${this.getClass.getName} not ready yet")
