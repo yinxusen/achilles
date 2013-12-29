@@ -6,6 +6,7 @@ import akka.actor._
 import breeze.util.Implicits._
 import scala.util.Random
 import akka.util.Timeout
+import scala.concurrent.ExecutionContext
 
 class ModelTrainer(
     path: String,
@@ -19,6 +20,7 @@ class ModelTrainer(
   extends Actor with ActorLogging {
 
   import TopicModel._
+  import ExecutionContext.Implicits.global
 
   override def preStart() {
     achilles.util.help.retry(3)(selfBoot)
@@ -27,7 +29,7 @@ class ModelTrainer(
   def selfBoot(): Unit = {
     implicit val timeout = Timeout(3.seconds)
     context.actorSelection(path).resolveOne() map {
-      case ActorIdentity(_, Some(actor)) =>
+      case actor: ActorRef =>
         log.info(s"${this.getClass.getName} get ready!")
         context.become(active(actor))
         bootstrap(iterations * 2)
@@ -106,4 +108,4 @@ object ModelTrainer {
     Props(classOf[ModelTrainer], path, params, trainingData, numWords, numTopics, numDocs, iterations, staleness)
 }
 
-// vim: set ts=4 sw=4 et:
+
