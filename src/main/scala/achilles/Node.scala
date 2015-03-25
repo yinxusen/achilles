@@ -13,13 +13,17 @@ trait Node {
   def compute(): Unit
 }
 
-class DocNode(val docId: Long) extends Node with Actor {
+class DocNode extends Node with Actor {
   var docTopic: SparseVector[Double] = ???
   override def nodeType(): String = "doc"
   override def compute(): Unit = ???
 
+  def randomTopic(numTopics: Long): SparseVector[Double] = {
+    ???
+  }
   override def receive: Receive = {
-    case UpdateDocTopic(docId, topicId) =>
+    case RandomTopic(numTopics) => randomTopic(numTopics)
+    case UpdateDocTopic(topicId) =>
       ???
     case _ =>
       ???

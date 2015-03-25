@@ -12,4 +12,8 @@ case class DocTopicDist(docTopic: SparseVector[Double]) extends Message
 
 case class TermTopicDist(termTopic: SparseVector[Double]) extends Message
 
-case class UpdateDocTopic(docId: Long, topicId: Long) extends Message
+case class UpdateDocTopic(topicId: Long) extends Message
+
+case class RandomTopic(numTopics: Long) extends Message
+
+case class ConsumeSourceBlock(sourceBlock: Iterator[Iterable[(String, Int)]]) extends Message
