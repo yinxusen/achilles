@@ -42,4 +42,6 @@ class SourceNode extends Node with Actor {
     case ConsumeSourceBlock(sourceBlock) => compute()
     case _ => ()
   }
+
+  override def timestamp(): Long = ???
 }
