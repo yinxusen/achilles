@@ -17,13 +17,7 @@ trait Node {
 
 
 
-class TermNode(val identity: String) extends Node {
-  var termTopic: SparseVector[Double] = ???
-  override def nodeType(): String = "term"
-  override def compute(): Unit = ???
 
-  override def timestamp(): Long = ???
-}
 
 class TopicNode(val topicId: Long) extends Node {
   var topicCount: Int = ???

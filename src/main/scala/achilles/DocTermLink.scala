@@ -2,9 +2,13 @@ package achilles
 
 import akka.actor.Actor
 import akka.actor.Actor.Receive
+import breeze.linalg.SparseVector
 
 class DocTermLink(val docId: Long, val termId: Long) extends Node with Actor {
   var currentTopic: Long = -1
+  var docTopicView: SparseVector[Double] = ???
+  var termTopicView: SparseVector[Double] = ???
+  var currentTopicCount: Long = ???
   var currentTimeStamp: Long = -1
 
   override def nodeType(): String = ???
